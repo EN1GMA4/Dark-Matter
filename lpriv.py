@@ -6,6 +6,7 @@ import random
 import socket
 import socks
 import ssl
+import platform  # Added missing import
 import requests
 import concurrent.futures
 import multiprocessing
