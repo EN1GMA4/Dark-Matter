@@ -36,7 +36,7 @@ def get_user_agents():
         try:
             url = "https://raw.githubusercontent.com/tamimibrahim17/User-Agent/main/user_agents.json"
             agents = requests.get(url).json()
-            with open("user-agents.txt", "w") as f:
+            with open("user_agents.txt", "w") as f:
                 f.write("\n".join(agents))
             print("[+] Downloaded fresh user agents")
         except:
@@ -46,7 +46,7 @@ def get_user_agents():
                 "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15"
             ]
 
-    with open("user-agents.txt", "r") as f:
+    with open("user_agents.txt", "r") as f:
         return [line.strip() for line in f if line.strip()]
 
 def fetch_proxies():
